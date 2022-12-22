@@ -160,7 +160,6 @@
       }
     }
   },
-  "defaultProject": "ngx-mat-intl-tel-input",
   "cli": {
     "analytics": false
   }
