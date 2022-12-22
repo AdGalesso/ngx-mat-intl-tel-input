@@ -1,4 +1,3 @@
-import {MatFormFieldControl} from '@angular/material/form-field';
 import {
   Component,
   DoCheck,
@@ -15,22 +14,46 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef
 } from '@angular/core';
-
-import {FormGroupDirective, NG_VALIDATORS, NgControl, NgForm} from '@angular/forms';
+import {
+  FormGroupDirective,
+  NG_VALIDATORS,
+  NgControl,
+  NgForm
+} from '@angular/forms';
+import {
+  AsYouType,
+  CountryCode as CC,
+  getExampleNumber,
+  NationalNumber,
+  parsePhoneNumberFromString,
+  PhoneNumber
+} from 'libphonenumber-js';
+import {
+  CanUpdateErrorState,
+  ErrorStateMatcher,
+  mixinErrorState,
+  _AbstractConstructor,
+  _Constructor,
+} from '@angular/material/core';
+import {MatFormFieldControl} from '@angular/material/form-field';
 import {CountryCode, Examples} from './data/country-code';
 import {phoneNumberValidator} from './ngx-mat-intl-tel-input.validator';
 import {Country} from './model/country.model';
 import {PhoneNumberFormat} from './model/phone-number-format.model';
-import {AsYouType, CountryCode as CC, E164Number, getExampleNumber, NationalNumber, parsePhoneNumberFromString, PhoneNumber} from 'libphonenumber-js';
-
 import {coerceBooleanProperty} from '@angular/cdk/coercion';
 import {Subject} from 'rxjs';
 import {FocusMonitor} from '@angular/cdk/a11y';
-import {CanUpdateErrorState, ErrorStateMatcher, mixinErrorState} from '@angular/material/core';
 import {MatMenu} from '@angular/material/menu';
-import { AbstractConstructor, Constructor } from '@angular/material/core/common-behaviors/constructor';
 
-class NgxMatIntlTelInputBase {
+declare interface HasErrorState {
+  _parentFormGroup: FormGroupDirective;
+  _parentForm: NgForm;
+  _defaultErrorStateMatcher: ErrorStateMatcher;
+  ngControl: NgControl;
+  stateChanges: Subject<void>;
+}
+
+class NgxMatIntlTelInputBase implements HasErrorState {
   // tslint:disable-next-line:variable-name
   constructor(public _defaultErrorStateMatcher: ErrorStateMatcher,
               // tslint:disable-next-line:variable-name
@@ -38,14 +61,17 @@ class NgxMatIntlTelInputBase {
               // tslint:disable-next-line:variable-name
               public _parentFormGroup: FormGroupDirective,
               /** @docs-private */
-              public ngControl: NgControl) {
+              public ngControl: NgControl,
+              public stateChanges: Subject<void>) {
   }
 }
 
+type CanUpdateErrorStateCtor = _Constructor<CanUpdateErrorState> &
+  _AbstractConstructor<CanUpdateErrorState>;
+
 // tslint:disable-next-line:variable-name
-const _NgxMatIntlTelInputMixinBase: Constructor<CanUpdateErrorState> &
-  AbstractConstructor<CanUpdateErrorState> & typeof NgxMatIntlTelInputBase =
-  mixinErrorState(NgxMatIntlTelInputBase);
+const _NgxMatIntlTelInputMixinBase: CanUpdateErrorStateCtor &
+  typeof NgxMatIntlTelInputBase = mixinErrorState(NgxMatIntlTelInputBase);
 
 @Component({
   // tslint:disable-next-line:component-selector
@@ -140,9 +166,10 @@ export class NgxMatIntlTelInputComponent extends _NgxMatIntlTelInputMixinBase
     // tslint:disable-next-line:variable-name
     @Optional() _parentFormGroup: FormGroupDirective,
     // tslint:disable-next-line:variable-name
+    @Optional() _stateChanges: Subject<void>,
     _defaultErrorStateMatcher: ErrorStateMatcher,
   ) {
-    super(_defaultErrorStateMatcher, _parentForm, _parentFormGroup, ngControl);
+    super(_defaultErrorStateMatcher, _parentForm, _parentFormGroup, ngControl, _stateChanges);
     fm.monitor(elRef, true).subscribe(origin => {
       if (this.focused && !origin) {
         this.onTouched();
