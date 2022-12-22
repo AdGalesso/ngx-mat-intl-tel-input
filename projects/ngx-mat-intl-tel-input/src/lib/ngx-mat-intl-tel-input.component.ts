@@ -21,13 +21,14 @@ import {CountryCode, Examples} from './data/country-code';
 import {phoneNumberValidator} from './ngx-mat-intl-tel-input.validator';
 import {Country} from './model/country.model';
 import {PhoneNumberFormat} from './model/phone-number-format.model';
-import {AsYouType, CountryCode as CC, E164Number, getExampleNumber, parsePhoneNumberFromString, PhoneNumber} from 'libphonenumber-js';
+import {AsYouType, CountryCode as CC, E164Number, getExampleNumber, NationalNumber, parsePhoneNumberFromString, PhoneNumber} from 'libphonenumber-js';
 
 import {coerceBooleanProperty} from '@angular/cdk/coercion';
 import {Subject} from 'rxjs';
 import {FocusMonitor} from '@angular/cdk/a11y';
-import {CanUpdateErrorState, CanUpdateErrorStateCtor, ErrorStateMatcher, mixinErrorState} from '@angular/material/core';
+import {CanUpdateErrorState, ErrorStateMatcher, mixinErrorState} from '@angular/material/core';
 import {MatMenu} from '@angular/material/menu';
+import { AbstractConstructor, Constructor } from '@angular/material/core/common-behaviors/constructor';
 
 class NgxMatIntlTelInputBase {
   // tslint:disable-next-line:variable-name
@@ -42,7 +43,8 @@ class NgxMatIntlTelInputBase {
 }
 
 // tslint:disable-next-line:variable-name
-const _NgxMatIntlTelInputMixinBase: CanUpdateErrorStateCtor & typeof NgxMatIntlTelInputBase =
+const _NgxMatIntlTelInputMixinBase: Constructor<CanUpdateErrorState> &
+  AbstractConstructor<CanUpdateErrorState> & typeof NgxMatIntlTelInputBase =
   mixinErrorState(NgxMatIntlTelInputBase);
 
 @Component({
@@ -75,6 +77,7 @@ export class NgxMatIntlTelInputComponent extends _NgxMatIntlTelInputMixinBase
   @Input() errorStateMatcher: ErrorStateMatcher;
   @Input() enableSearch = false;
   @Input() searchPlaceholder: string;
+  @Input() enableWCAGAccessibility = false;
 
   @Input()
   get format(): PhoneNumberFormat {
@@ -98,7 +101,7 @@ export class NgxMatIntlTelInputComponent extends _NgxMatIntlTelInputMixinBase
   focused = false;
   @HostBinding() id = `ngx-mat-intl-tel-input-${NgxMatIntlTelInputComponent.nextId++}`;
   describedBy = '';
-  phoneNumber: E164Number = '';
+  phoneNumber: NationalNumber = '';
   allCountries: Array<Country> = [];
   preferredCountriesInDropDown: Array<Country> = [];
   selectedCountry: Country;
@@ -349,7 +352,7 @@ export class NgxMatIntlTelInputComponent extends _NgxMatIntlTelInputMixinBase
   }
 
   onContainerClick(event: MouseEvent) {
-    if ((event.target as Element).tagName.toLowerCase() !== 'input') {
+    if (!this.enableWCAGAccessibility && (event.target as Element).tagName.toLowerCase() !== 'input') {
       // tslint:disable-next-line:no-non-null-assertion
       this.elRef.nativeElement.querySelector('input')!.focus();
     }
@@ -392,5 +395,17 @@ export class NgxMatIntlTelInputComponent extends _NgxMatIntlTelInputMixinBase
       this.phoneNumber = asYouType.input(this.phoneNumber.toString());
     }
     this.previousFormattedNumber = this.phoneNumber.toString();
+  }
+
+  public getCountryName(country: Country): string {
+    return `${country.name} +${country.dialCode}`;
+  }
+
+  get isInvalid(): boolean {
+    return this.errorState;
+  }
+
+  get selectedCountryName(): string {
+    return this.selectedCountry ? `selected ${this.selectedCountry.name} +${this.selectedCountry.dialCode}` : '';
   }
 }
